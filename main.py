@@ -13,7 +13,6 @@ import logging
 try:
     from config import CONFIG
 except Exception as e:
-    print e
     exit('You need to create a config file')
 
 

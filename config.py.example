@@ -1,3 +1,5 @@
+import os
+
 CONFIG = {
     'app': {
         'data_dir': os.path.join(os.path.expanduser("~"), 'Music', 'stick_contents'),
