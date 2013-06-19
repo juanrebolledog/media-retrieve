@@ -1,0 +1,11 @@
+CONFIG = {
+    'app': {
+        'data_dir': os.path.join(os.path.expanduser("~"), 'Music', 'stick_contents'),
+        'itunes_library': os.path.join(os.path.expanduser("~"), 'Music', 'iTunes', 'iTunes Music Library.xml'),
+        'xld_bin': '/opt/local/bin/xld'
+    },
+    'db': {
+		'host': 'localhost',
+		'port': 27017
+	}
+}
