@@ -75,12 +75,7 @@ def reset_db(options):
 
 
 def find(options):
-    if tracks.count() <= 0:
-        logger.warning('Library empty. Scan needed.')
-        if options.verbose:
-            exit('You need to scan the library first')
-        else:
-            exit()
+    
     conditions = {}
     if options.artist:
         conditions['artist'] = options.artist
@@ -91,7 +86,9 @@ def find(options):
     if options.track:
         conditions['track'] = options.track
 
-    return tracks.find(conditions)
+    result = tracks.find(conditions)
+
+    return result
 
 
 def retrieve(options):
