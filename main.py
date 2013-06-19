@@ -114,7 +114,7 @@ def retrieve(options):
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
 
-        if not os.path.exists(final_name):
+        if not os.path.exists(final_name) and not os.path.exists('{0}.mp3'.format(final_name)):
             
             try:
                 if song['kind'] == 'Audio Apple Lossless':
