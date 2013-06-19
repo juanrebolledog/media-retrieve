@@ -9,10 +9,13 @@ import os
 import subprocess
 import logging
 
+
 try:
     from config import CONFIG
 except Exception as e:
+    print e
     exit('You need to create a config file')
+
 
 logger = logging.getLogger(__name__)
 hdlr = logging.FileHandler('app.log')
@@ -21,9 +24,10 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 
+COLLECTION_NAME = 'tracks'
 client = MongoClient(CONFIG['db']['host'], CONFIG['db']['port'])
-db = client.itunes2stick
-tracks = db.tracks
+db = client['media-retrieve']
+tracks = db[COLLECTION_NAME]
 
 
 def parse_library(options):
@@ -72,6 +76,12 @@ def reset_db(options):
 
 
 def find(options):
+    if tracks.count() <= 0:
+        logger.warning('Library empty. Scan needed.')
+        if options.verbose:
+            exit('You need to scan the library first')
+        else:
+            exit()
     conditions = {}
     if options.artist:
         conditions['artist'] = options.artist
