@@ -1,6 +1,6 @@
 from pyItunes import *
-from pymongo import MongoClient
-from optparse import OptionParser
+import sqlite3
+from optparse import OptionParser, OptionGroup
 import shutil
 from urlparse import urlparse
 from urllib import unquote
@@ -23,14 +23,13 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 
-COLLECTION_NAME = 'tracks'
-client = MongoClient(CONFIG['db']['host'], CONFIG['db']['port'])
-db = client['media-retrieve']
-tracks = db[COLLECTION_NAME]
+
+conn = sqlite3.connect('media-retrieve.db')
+c = conn.cursor()
 
 
 def parse_library(options):
-    reset_db(options)
+    #reset_db(options)
     logger.info('Reading Library')
     if options.verbose:
         print 'Reading Library'
@@ -58,13 +57,18 @@ def parse_library(options):
         options.album = track['album']
         options.track = track['track']
 
-        if find(options).count() == 0:
+        if find(options):
             logger.info(track['location'])
             if options.verbose:
                 print track['location']
 
-            tracks.insert(track)
+            insert(track)
     return True
+
+
+def insert(track):
+    track = (track['artist'], track['album'], track['album_artist'], track['track'], track['location'], track['kind'])
+    c.execute('INSERT INTO tracks (artist, album, album_artist, track, filename, kind) VALUES (?, ?, ?, ?, ?)', track)
 
 
 def reset_db(options):
@@ -75,20 +79,42 @@ def reset_db(options):
 
 
 def find(options):
-    
-    conditions = {}
+
+    conditions = ()
+    cmd = 'SELECT * FROM tracks'
+    query = []
+
     if options.artist:
-        conditions['artist'] = options.artist
+        qstring = ('artist', options.artist)
+        query.append(qstring)
+        conditions = conditions + qstring
 
     if options.album:
-        conditions['album'] = options.album
+        qstring = ('album', options.album)
+        query.append(qstring)
+        conditions = conditions + qstring
 
     if options.track:
-        conditions['track'] = options.track
+        qstring = ('track', options.track)
+        query.append(qstring)
+        conditions = conditions + qstring
+    
+    if len(query) > 0:
+        cmd += ' WHERE'
+        for i, option in query:
+            if i != 0:
+                cmd += ' AND'
+            cmd += ' ?=?'
 
-    result = tracks.find(conditions)
+    print cmd
+    result = c.execute(cmd, conditions)
 
-    return result
+
+
+    if c.rowcount > 0:
+        return result
+
+    return False
 
 
 def retrieve(options):
@@ -138,13 +164,18 @@ def retrieve(options):
 if __name__ == '__main__':
 
     parser = OptionParser()
-    parser.add_option('-f', '--find', action='store_true', dest='find')
+    
     parser.add_option('-s', '--scan', action='store_true', dest='scan')
     parser.add_option('-x', '--reset', action='store_true', dest='reset')
+    parser.add_option('-f', '--find', action='store_true', dest='find')
+
+    group = OptionGroup(parser, "Find Options")
+    group.add_option('-a', '--artist', action='store', type='string', dest='artist')
+    group.add_option('-b', '--album', action='store', type='string', dest='album')
+    group.add_option('-t', '--track', action='store', type='string', dest='track')
+    parser.add_option_group(group)
+
     parser.add_option('-r', '--retrieve', action='store_true', dest='retrieve')
-    parser.add_option('-a', '--artist', action='store', type='string', dest='artist')
-    parser.add_option('-b', '--album', action='store', type='string', dest='album')
-    parser.add_option('-t', '--track', action='store', type='string', dest='track')
     parser.add_option('-v', '--verbose', action='store_true', dest='verbose')
     (options, args) = parser.parse_args()
 
