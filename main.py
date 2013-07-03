@@ -25,6 +25,7 @@ logger.setLevel(logging.INFO)
 
 
 conn = sqlite3.connect('media-retrieve.db')
+conn.text_factory = str
 c = conn.cursor()
 
 
@@ -39,6 +40,7 @@ def parse_library(options):
 
     if options.verbose:
         print 'Tracks:'
+
     for song in l.songs:
 
         h = HTMLParser.HTMLParser()
@@ -57,7 +59,7 @@ def parse_library(options):
         options.album = track['album']
         options.track = track['track']
 
-        if find(options):
+        if not find(options):
             logger.info(track['location'])
             if options.verbose:
                 print track['location']
@@ -68,48 +70,48 @@ def parse_library(options):
 
 def insert(track):
     track = (track['artist'], track['album'], track['album_artist'], track['track'], track['location'], track['kind'])
-    c.execute('INSERT INTO tracks (artist, album, album_artist, track, filename, kind) VALUES (?, ?, ?, ?, ?)', track)
+    c.execute('INSERT INTO tracks (artist, album, album_artist, track, filename, kind) VALUES (?, ?, ?, ?, ?, ?)', track)
 
 
 def reset_db(options):
     logger.info('Resetting DB')
     if options.verbose:
         print 'Resetting DB'
-    db.drop_collection(tracks)
+    c.execute('DROP TABLE IF EXISTS tracks')
+    c.execute('CREATE TABLE [tracks] ([id] INTEGER PRIMARY KEY AUTOINCREMENT, [artist] TEXT, [album] TEXT, [album_artist] TEXT, [track] TEXT, [filename] TEXT, [kind] TEXT);')
+
 
 
 def find(options):
-
-    conditions = ()
+    conditions = {}
+    values = ()
     cmd = 'SELECT * FROM tracks'
-    query = []
 
-    if options.artist:
-        qstring = ('artist', options.artist)
-        query.append(qstring)
-        conditions = conditions + qstring
-
-    if options.album:
-        qstring = ('album', options.album)
-        query.append(qstring)
-        conditions = conditions + qstring
-
-    if options.track:
-        qstring = ('track', options.track)
-        query.append(qstring)
-        conditions = conditions + qstring
-    
-    if len(query) > 0:
+    if options.artist or options.album or options.track:
         cmd += ' WHERE'
-        for i, option in query:
-            if i != 0:
-                cmd += ' AND'
-            cmd += ' ?=?'
+
+        if options.artist:
+            conditions['artist'] = options.artist
+
+        if options.album:
+            conditions['album'] = options.album
+
+        if options.track:
+            conditions['track'] = options.track
+
+    i = 0
+    for field in conditions:
+        if i == 0:
+            cmd += ' {0}=?'.format(field)
+        else:
+            cmd += ' AND {0}=?'.format(field)
+        i += 1
+        values = values + (conditions[field],)
+
+    result = c.execute(cmd, values)
 
     print cmd
-    result = c.execute(cmd, conditions)
-
-
+    print values
 
     if c.rowcount > 0:
         return result
