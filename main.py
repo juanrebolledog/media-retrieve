@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from pyItunes import *
 import sqlite3
 from optparse import OptionParser, OptionGroup
