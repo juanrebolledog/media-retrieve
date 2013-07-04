@@ -12,19 +12,22 @@ import logging
 
 try:
     from config import CONFIG
+    if not os.path.exists(CONFIG['app']['meta_dir']):
+        os.makedirs(CONFIG['app']['meta_dir'])
 except Exception as e:
     exit('You need to create a config file')
 
 
 logger = logging.getLogger(__name__)
-hdlr = logging.FileHandler('app.log')
+
+hdlr = logging.FileHandler(os.path.join(CONFIG['app']['meta_dir'], 'app.log'))
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 
 
-conn = sqlite3.connect('media-retrieve.db')
+conn = sqlite3.connect(os.path.join(CONFIG['app']['meta_dir'], 'media-retrieve.db'))
 conn.row_factory = sqlite3.Row
 c = conn.cursor()
 
