@@ -5,5 +5,4 @@ Python app that reads an itunes library and retrieves music files to a specified
 
 This app is using:
 
-pymongo
 [pyItunes](https://github.com/liamks/pyitunes)
