@@ -72,16 +72,12 @@ def parse_library(options):
         else:
             track['album'] = None
 
-        options.artist = track['artist']
-        options.album = track['album']
-        options.track = track['track']
+        logger.info(track['filename'])
+        if options.verbose:
+            print track['filename']
 
-        if not find(options):
-            logger.info(track['filename'])
-            if options.verbose:
-                print track['filename']
+        insert(track)
 
-            insert(track)
     conn.commit()
     return True
 
