@@ -10,26 +10,34 @@ import HTMLParser
 import os
 import subprocess
 import logging
+import json
 
 
 try:
-    from config import CONFIG
-    if not os.path.exists(CONFIG['app']['meta_dir']):
-        os.makedirs(CONFIG['app']['meta_dir'])
+    meta_dir = os.path.join(os.path.expanduser('~'), '.media-retrieve')
+
+    if not os.path.isdir(meta_dir):
+        os.makedirs(meta_dir)
+
+    config_file = os.path.join(meta_dir, 'config.json')
+
+    with open(config_file) as file:
+        CONFIG = json.load(file)
+
 except Exception as e:
     exit('You need to create a config file')
 
 
 logger = logging.getLogger(__name__)
 
-hdlr = logging.FileHandler(os.path.join(CONFIG['app']['meta_dir'], 'app.log'))
+hdlr = logging.FileHandler(os.path.join(meta_dir, 'app.log'))
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 
 
-conn = sqlite3.connect(os.path.join(CONFIG['app']['meta_dir'], 'media-retrieve.db'))
+conn = sqlite3.connect(os.path.join(meta_dir, 'media-retrieve.db'))
 conn.row_factory = sqlite3.Row
 c = conn.cursor()
 

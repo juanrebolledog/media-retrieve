@@ -1,0 +1,7 @@
+{
+    "app": {
+        "data_dir": "/path/to/drop/files",
+        "itunes_library": "/path/to/iTunes Library.xml",
+        "xld_bin": "/path/to/xld"
+    }
+}
