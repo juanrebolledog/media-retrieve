@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from pyItunes import *
 import sqlite3
@@ -11,6 +12,7 @@ import os
 import subprocess
 import logging
 import json
+import itertools
 
 
 try:
@@ -55,36 +57,36 @@ def parse_library(options):
         print 'Tracks:'
 
     for song in l.songs:
+        if song.kind == 'Audio Apple Lossless' or song.kind == 'Archivo de audio MPEG':
+            h = HTMLParser.HTMLParser()
+            location = h.unescape(song.location.decode('utf-8'))
 
-        h = HTMLParser.HTMLParser()
-        location = h.unescape(song.location.decode('utf-8'))
-        
-        track = {
-            'track': song.name.decode('utf-8'),
-            'kind': song.kind,
-            'filename': urlparse(unquote(location), allow_fragments=False).path
-        }
+            track = {
+                'track': h.unescape(song.name.decode('utf-8')),
+                'kind': song.kind,
+                'filename': urlparse(unquote(location), allow_fragments=False).path
+            }
 
-        if song.album_artist:
-            track['album_artist'] = song.album_artist.decode('utf-8')
-        else:
-            track['album_artist'] = None
+            if song.album_artist:
+                track['album_artist'] = h.unescape(song.album_artist.decode('utf-8'))
+            else:
+                track['album_artist'] = None
 
-        if song.artist:
-            track['artist'] = song.artist.decode('utf-8')
-        else:
-            track['artist'] = None
+            if song.artist:
+                track['artist'] = h.unescape(song.artist.decode('utf-8'))
+            else:
+                track['artist'] = None
 
-        if song.album:
-            track['album'] = song.album.decode('utf-8')
-        else:
-            track['album'] = None
+            if song.album:
+                track['album'] = h.unescape(song.album.decode('utf-8'))
+            else:
+                track['album'] = None
 
-        logger.info(track['filename'])
-        if options.verbose:
-            print track['filename']
+            logger.info(track['filename'])
+            if options.verbose:
+                print track
 
-        insert(track)
+            insert(track)
 
     conn.commit()
     return True
@@ -103,7 +105,6 @@ def reset_db(options):
     c.execute('CREATE TABLE [tracks] ([id] INTEGER PRIMARY KEY AUTOINCREMENT, [artist] TEXT, [album] TEXT, [album_artist] TEXT, [track] TEXT, [filename] TEXT, [kind] TEXT);')
 
 
-
 def find(options):
     conditions = {}
     values = ()
@@ -113,13 +114,13 @@ def find(options):
         cmd += ' WHERE'
 
         if options.artist:
-            conditions['artist'] = options.artist
+            conditions['artist'] = options.artist.decode('utf-8')
 
         if options.album:
-            conditions['album'] = options.album
+            conditions['album'] = options.album.decode('utf-8')
 
         if options.track:
-            conditions['track'] = options.track
+            conditions['track'] = options.track.decode('utf-8')
 
     i = 0
     for field in conditions:
@@ -182,7 +183,7 @@ def retrieve(options):
 if __name__ == '__main__':
 
     parser = OptionParser()
-    
+
     parser.add_option('-s', '--scan', action='store_true', dest='scan')
     parser.add_option('-x', '--reset', action='store_true', dest='reset')
     parser.add_option('-f', '--find', action='store_true', dest='find')
@@ -198,8 +199,19 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     if options.find:
+        groups = []
+        artists = []
+        data = sorted(find(options), key=lambda t: t['artist'])
+
+        for k, g in itertools.groupby(data, lambda t: t['artist']):
+            for i, v in itertools.groupby(g, lambda a: a['album']):
+                groups.append(list(v))
+
         for result in find(options):
-            print 'Track: {0} | Artist: {1} | Album: {2}'.format(result['track'], result['artist'], result['album'])
+            try:
+                print 'Track: {0} | Artist: {1} | Album: {2}'.format(result['track'].encode('utf-8'), result['artist'].encode('utf-8'), result['album'].encode('utf-8'))
+            except:
+                pass
 
     elif options.scan:
         parse_library(options)
