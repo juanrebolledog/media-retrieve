@@ -84,7 +84,12 @@ def parse_library(options):
 
             logger.info(track['filename'])
             if options.verbose:
-                print track
+                try:
+                    print 'Add :: {0} - {1} - {2}'.format(h.unescape(track['artist'].encode('utf-8')), h.unescape(track['album'].encode('utf-8')), h.unescape(track['track'].encode('utf-8')))
+                except Exception as e:
+                    print e
+                    print track
+                    exit()
 
             insert(track)
 
